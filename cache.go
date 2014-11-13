@@ -15,16 +15,34 @@ type Item struct {
 	Expiration *time.Time
 }
 
+func (item *Item) Expired() bool {
+	if item.Expiration == nil {
+		return false
+	}
+	return item.Expiration.Before(time.Now())
+}
+
 func New() *Cache {
-	return &Cache{
+	c := &Cache{
 		items: map[string]*Item{},
 	}
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			for k, v := range c.items {
+				if v.Expired() {
+					c.Delete(k)
+				}
+			}
+		}
+	}()
+	return c
 }
 
 func (c *Cache) Get(key string) (interface{}, bool) {
 	c.RLock()
 	item, ok := c.items[key]
-	if !ok {
+	if !ok || item.Expired() {
 		c.RUnlock()
 		return nil, false
 	}
@@ -32,10 +50,16 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 	return item.Object, true
 }
 
-func (c *Cache) Set(key string, val interface{}) {
+func (c *Cache) Set(key string, val interface{}, dur time.Duration) {
+	var t *time.Time
+	if dur > 0 {
+		tmp := time.Now().Add(dur)
+		t = &tmp
+	}
 	c.Lock()
 	c.items[key] = &Item{
-		Object: val,
+		Object:     val,
+		Expiration: t,
 	}
 	c.Unlock()
 }
