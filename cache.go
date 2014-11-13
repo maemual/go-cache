@@ -52,11 +52,11 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 
 func (c *Cache) Set(key string, val interface{}, dur time.Duration) {
 	var t *time.Time
+	c.Lock()
 	if dur > 0 {
 		tmp := time.Now().Add(dur)
 		t = &tmp
 	}
-	c.Lock()
 	c.items[key] = &Item{
 		Object:     val,
 		Expiration: t,
