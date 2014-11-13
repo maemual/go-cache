@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -56,5 +57,50 @@ func TestIncDec(t *testing.T) {
 	val, _ = c.Get("key")
 	if val != 100 {
 		t.Error("Decrement error")
+	}
+}
+
+func BenchmarkCacheGet(b *testing.B) {
+	b.StopTimer()
+	tc := New()
+	tc.Set("key", "values", -1)
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		tc.Get("key")
+	}
+}
+
+func BenchmarkRWMutexGet(b *testing.B) {
+	b.StopTimer()
+	m := map[string]string{
+		"key": "values",
+	}
+	mu := sync.RWMutex{}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		mu.RLock()
+		_, _ = m["key"]
+		mu.RUnlock()
+	}
+}
+
+func BenchmarkCacheSet(b *testing.B) {
+	b.StopTimer()
+	tc := New()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		tc.Set("key", "values", -1)
+	}
+}
+
+func BenchmarkRWMutexSet(b *testing.B) {
+	b.StopTimer()
+	m := map[string]string{}
+	mu := sync.RWMutex{}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		mu.Lock()
+		m["key"] = "values"
+		mu.Unlock()
 	}
 }
