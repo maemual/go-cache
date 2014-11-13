@@ -104,3 +104,23 @@ func BenchmarkRWMutexSet(b *testing.B) {
 		mu.Unlock()
 	}
 }
+
+func BenchmarkCacheIncrement(b *testing.B) {
+	b.StopTimer()
+	tc := New()
+	tc.Set("key", 0, -1)
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		tc.Increment("key", 1)
+	}
+}
+
+func BenchmarkCacheDecrement(b *testing.B) {
+	b.StopTimer()
+	tc := New()
+	tc.Set("key", 0, -1)
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		tc.Decrement("key", 1)
+	}
+}
