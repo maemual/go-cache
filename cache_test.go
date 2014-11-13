@@ -19,4 +19,15 @@ func TestCache(t *testing.T) {
 	if val != "lalala" {
 		t.Error("FUCK!")
 	}
+	c.Delete("key")
+	_, found = c.Get("key")
+	if found {
+		t.Error("impossiable!")
+	}
+	c.Set("key", "bababa")
+	c.Flush()
+	_, found = c.Get("key")
+	if found {
+		t.Error("impossiable again!")
+	}
 }

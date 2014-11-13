@@ -39,3 +39,15 @@ func (c *Cache) Set(key string, val interface{}) {
 	}
 	c.Unlock()
 }
+
+func (c *Cache) Delete(key string) {
+	c.Lock()
+	delete(c.items, key)
+	c.Unlock()
+}
+
+func (c *Cache) Flush() {
+	c.Lock()
+	c.items = map[string]*Item{}
+	c.Unlock()
+}
