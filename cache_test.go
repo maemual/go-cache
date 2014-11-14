@@ -46,7 +46,11 @@ func TestCache(t *testing.T) {
 	if !found {
 		t.Error("must have this")
 	}
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
+	cnt = c.ItemCount()
+	if cnt != 0 {
+		t.Error("The number of cache must be 0")
+	}
 	_, found = c.Get("key")
 	if found {
 		t.Error("The key is time out, you should not get")
