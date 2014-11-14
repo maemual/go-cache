@@ -27,10 +27,18 @@ func TestCache(t *testing.T) {
 		t.Error("The key is delete, you should not get")
 	}
 	c.Set("key", "bababa", -1)
+	cnt := c.ItemCount()
+	if cnt != 1 {
+		t.Error("The number of cache must be 1")
+	}
 	c.Flush()
 	_, found = c.Get("key")
 	if found {
 		t.Error("All keys are flush, you should not get")
+	}
+	cnt = c.ItemCount()
+	if cnt != 0 {
+		t.Error("The number of cache must be 0")
 	}
 
 	c.Set("key", "val", 2*time.Second)
