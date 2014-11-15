@@ -152,3 +152,10 @@ func (c *Cache) Decrement(key string, x int64) error {
 	c.Unlock()
 	return nil
 }
+
+func (c *Cache) ItemCount() int {
+	c.RLock()
+	counts := len(c.items)
+	c.RUnlock()
+	return counts
+}
