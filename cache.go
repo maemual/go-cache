@@ -33,11 +33,7 @@ func New(defaultExpiration, cleanInterval time.Duration) *Cache {
 		go func() {
 			for {
 				time.Sleep(cleanInterval)
-				for k, v := range c.items {
-					if v.Expired() {
-						c.Delete(k)
-					}
-				}
+				c.DeleteExpired()
 			}
 		}()
 	}
@@ -165,4 +161,14 @@ func (c *Cache) ItemCount() int {
 	counts := len(c.items)
 	c.RUnlock()
 	return counts
+}
+
+func (c *Cache) DeleteExpired() {
+	c.Lock()
+	for k, v := range c.items {
+		if v.Expired() {
+			delete(c.items, k)
+		}
+	}
+	c.Unlock()
 }
