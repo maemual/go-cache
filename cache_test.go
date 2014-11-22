@@ -7,7 +7,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	c := New()
+	c := New(2*time.Second, 1*time.Second)
 	_, found := c.Get("xx")
 	if found {
 		t.Error("You should not get")
@@ -58,7 +58,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestIncDec(t *testing.T) {
-	c := New()
+	c := New(1*time.Second, -1)
 	c.Set("key", 100, -1)
 	c.Increment("key", 1)
 	val, _ := c.Get("key")
@@ -74,7 +74,7 @@ func TestIncDec(t *testing.T) {
 
 func BenchmarkCacheGet(b *testing.B) {
 	b.StopTimer()
-	tc := New()
+	tc := New(0, 0)
 	tc.Set("key", "values", -1)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -98,7 +98,7 @@ func BenchmarkRWMutexGet(b *testing.B) {
 
 func BenchmarkCacheSet(b *testing.B) {
 	b.StopTimer()
-	tc := New()
+	tc := New(0, 0)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		tc.Set("key", "values", -1)
@@ -119,7 +119,7 @@ func BenchmarkRWMutexSet(b *testing.B) {
 
 func BenchmarkCacheIncrement(b *testing.B) {
 	b.StopTimer()
-	tc := New()
+	tc := New(0, 0)
 	tc.Set("key", 0, -1)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -129,7 +129,7 @@ func BenchmarkCacheIncrement(b *testing.B) {
 
 func BenchmarkCacheDecrement(b *testing.B) {
 	b.StopTimer()
-	tc := New()
+	tc := New(0, 0)
 	tc.Set("key", 0, -1)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {

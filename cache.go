@@ -8,7 +8,8 @@ import (
 
 type Cache struct {
 	sync.RWMutex
-	items map[string]*Item
+	items             map[string]*Item
+	defaultExpiration time.Duration
 }
 
 type Item struct {
@@ -23,20 +24,19 @@ func (item *Item) Expired() bool {
 	return item.Expiration.Before(time.Now())
 }
 
-func New() *Cache {
+func New(defaultExpiration, cleanInterval time.Duration) *Cache {
 	c := &Cache{
-		items: map[string]*Item{},
+		items:             map[string]*Item{},
+		defaultExpiration: defaultExpiration,
 	}
-	go func() {
-		for {
-			time.Sleep(1 * time.Second)
-			for k, v := range c.items {
-				if v.Expired() {
-					c.Delete(k)
-				}
+	if cleanInterval > 0 {
+		go func() {
+			for {
+				time.Sleep(cleanInterval)
+				c.DeleteExpired()
 			}
-		}
-	}()
+		}()
+	}
 	return c
 }
 
@@ -54,6 +54,9 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 func (c *Cache) Set(key string, val interface{}, dur time.Duration) {
 	var t *time.Time
 	c.Lock()
+	if dur == 0 {
+		dur = c.defaultExpiration
+	}
 	if dur > 0 {
 		tmp := time.Now().Add(dur)
 		t = &tmp
@@ -158,4 +161,14 @@ func (c *Cache) ItemCount() int {
 	counts := len(c.items)
 	c.RUnlock()
 	return counts
+}
+
+func (c *Cache) DeleteExpired() {
+	c.Lock()
+	for k, v := range c.items {
+		if v.Expired() {
+			delete(c.items, k)
+		}
+	}
+	c.Unlock()
 }
