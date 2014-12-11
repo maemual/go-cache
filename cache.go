@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"container/list"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -171,4 +173,105 @@ func (c *Cache) DeleteExpired() {
 		}
 	}
 	c.Unlock()
+}
+
+type LRUCache struct {
+	sync.RWMutex
+	maxEntries int
+	items      map[string]*list.Element
+	cacheList  *list.List
+}
+
+type entry struct {
+	key   string
+	value interface{}
+}
+
+func NewLRU(size int) (*LRUCache, error) {
+	if size < 0 {
+		return nil, errors.New("The size of LRU Cache must no less than 0")
+	}
+	lru := &LRUCache{
+		maxEntries: size,
+		items:      make(map[string]*list.Element, size),
+		cacheList:  list.New(),
+	}
+	return lru, nil
+}
+
+func (c *LRUCache) Add(key string, value interface{}) {
+	c.Lock()
+	defer c.Unlock()
+	if ent, hit := c.items[key]; hit {
+		c.cacheList.MoveToFront(ent)
+		ent.Value.(*entry).value = value
+		return
+	}
+	ent := &entry{
+		key:   key,
+		value: value,
+	}
+	entry := c.cacheList.PushFront(ent)
+	c.items[key] = entry
+
+	if c.maxEntries > 0 && c.cacheList.Len() > c.maxEntries {
+		c.removeOldestElement()
+	}
+}
+
+func (c *LRUCache) Get(key string) (interface{}, bool) {
+	c.RLock()
+	defer c.RUnlock()
+
+	if ent, hit := c.items[key]; hit {
+		c.cacheList.MoveToFront(ent)
+		return ent.Value.(*entry).value, true
+	}
+	return nil, false
+}
+
+func (c *LRUCache) Remove(key string) {
+	c.Lock()
+	defer c.Unlock()
+
+	if ent, hit := c.items[key]; hit {
+		c.removeElement(ent)
+	}
+}
+
+func (c *LRUCache) Len() int {
+	c.RLock()
+	length := c.cacheList.Len()
+	c.RUnlock()
+	return length
+}
+
+func (c *LRUCache) Clear() {
+	c.Lock()
+	c.cacheList = list.New()
+	c.items = make(map[string]*list.Element, c.maxEntries)
+	c.Unlock()
+}
+
+func (c *LRUCache) SetMaxEntries(max int) error {
+	if max < 0 {
+		return errors.New("The max limit of entryies must no less than 0")
+	}
+	c.Lock()
+	c.maxEntries = max
+	c.Unlock()
+	return nil
+}
+
+func (c *LRUCache) removeElement(e *list.Element) {
+	c.cacheList.Remove(e)
+	ent := e.Value.(*entry)
+	delete(c.items, ent.key)
+}
+
+func (c *LRUCache) removeOldestElement() {
+	ent := c.cacheList.Back()
+	if ent != nil {
+		c.removeElement(ent)
+	}
 }
