@@ -253,6 +253,16 @@ func (c *LRUCache) Clear() {
 	c.Unlock()
 }
 
+func (c *LRUCache) SetMaxEntries(max int) error {
+	if max < 0 {
+		return errors.New("The max limit of entryies must no less than 0")
+	}
+	c.Lock()
+	c.maxEntries = max
+	c.Unlock()
+	return nil
+}
+
 func (c *LRUCache) removeElement(e *list.Element) {
 	c.cacheList.Remove(e)
 	ent := e.Value.(*entry)

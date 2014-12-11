@@ -177,4 +177,10 @@ func TestLRUCache(t *testing.T) {
 	if lru.Len() != 0 {
 		t.Error("Now, the lru cache is cleared")
 	}
+	lru.SetMaxEntries(2)
+	lru.Add("1", 2222)
+	lru.Add("2", 34444)
+	if lru.Len() != 2 {
+		t.Error("Now, the len of lru cache must be 2")
+	}
 }
