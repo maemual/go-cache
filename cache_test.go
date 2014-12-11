@@ -173,4 +173,8 @@ func TestLRUCache(t *testing.T) {
 	if lru.Len() != 0 {
 		t.Error("Now, there is no value in cache")
 	}
+	lru.Clear()
+	if lru.Len() != 0 {
+		t.Error("Now, the lru cache is cleared")
+	}
 }

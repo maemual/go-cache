@@ -239,6 +239,20 @@ func (c *LRUCache) Remove(key string) {
 	}
 }
 
+func (c *LRUCache) Len() int {
+	c.RLock()
+	length := c.cacheList.Len()
+	c.RUnlock()
+	return length
+}
+
+func (c *LRUCache) Clear() {
+	c.Lock()
+	c.cacheList = list.New()
+	c.items = make(map[string]*list.Element, c.maxEntries)
+	c.Unlock()
+}
+
 func (c *LRUCache) removeElement(e *list.Element) {
 	c.cacheList.Remove(e)
 	ent := e.Value.(*entry)
@@ -250,11 +264,4 @@ func (c *LRUCache) removeOldestElement() {
 	if ent != nil {
 		c.removeElement(ent)
 	}
-}
-
-func (c *LRUCache) Len() int {
-	c.RLock()
-	length := c.cacheList.Len()
-	c.RUnlock()
-	return length
 }
