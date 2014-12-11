@@ -136,3 +136,41 @@ func BenchmarkCacheDecrement(b *testing.B) {
 		tc.Decrement("key", 1)
 	}
 }
+
+func TestLRUCache(t *testing.T) {
+	_, err := NewLRU(-1)
+	if err == nil {
+		t.Error("Impossiable!")
+	}
+	lru, err := NewLRU(1)
+	if err != nil {
+		t.Error(err)
+	}
+	lru.Add("1", 111)
+	if lru.Len() != 1 {
+		t.Error("Now, there is one value in cache")
+	}
+	val, hit := lru.Get("1")
+	if !hit {
+		t.Error("I should get the key")
+	}
+	if val != 111 {
+		t.Error("Get the wrong value")
+	}
+	lru.Add("2", 222)
+	if lru.Len() != 1 {
+		t.Error("Now, there is only one value in cache")
+	}
+	_, hit = lru.Get("1")
+	if hit {
+		t.Error("The old value must be removed")
+	}
+	lru.Remove("2")
+	_, hit = lru.Get("2")
+	if hit {
+		t.Error("The value must be removed")
+	}
+	if lru.Len() != 0 {
+		t.Error("Now, there is no value in cache")
+	}
+}
