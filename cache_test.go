@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -183,4 +184,40 @@ func TestLRUCache(t *testing.T) {
 	if lru.Len() != 2 {
 		t.Error("Now, the len of lru cache must be 2")
 	}
+}
+
+func ExampleCache() {
+	c := New(0, 0)
+	c.Set("1", 1111, 0)
+	val, found := c.Get("1")
+	if found {
+		fmt.Println(val)
+	}
+	c.Increment("1", 1)
+	val, found = c.Get("1")
+	if found {
+		fmt.Println(val)
+	}
+	// Output:
+	// 1111
+	// 1112
+}
+
+func ExampleLRUCache() {
+	lru, err := NewLRU(3)
+	if err != nil {
+		fmt.Println(err)
+	}
+	lru.Add("1", 1111)
+	lru.Add("2", 2222)
+	lru.Add("3", 3333)
+	lru.Add("4", 4444)
+	_, hit := lru.Get("1")
+	if hit {
+		fmt.Println("Hit key 1")
+	} else {
+		fmt.Println("Not hit key 1")
+	}
+	// Output:
+	// Not hit key 1
 }

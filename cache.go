@@ -1,3 +1,8 @@
+// This package provide a simple memory k/v cache and LRU cache.
+// It based on the k/v cache implementation in go-cache:
+// https://github.com/pmylund/go-cache
+// and LRU cache implementation in groupcache:
+// https://github.com/golang/groupcache/tree/master/lru
 package cache
 
 import (
@@ -8,6 +13,7 @@ import (
 	"time"
 )
 
+// Cache is a goroutine-safe K/V cache.
 type Cache struct {
 	sync.RWMutex
 	items             map[string]*Item
@@ -19,6 +25,7 @@ type Item struct {
 	Expiration *time.Time
 }
 
+// Returns true if the item has expired.
 func (item *Item) Expired() bool {
 	if item.Expiration == nil {
 		return false
@@ -26,6 +33,11 @@ func (item *Item) Expired() bool {
 	return item.Expiration.Before(time.Now())
 }
 
+// New create a new cache with a given default expiration duration and cleanup
+// interval. If the expiration duration is less than 1, the items in the cache
+// never expire (by default), and must be deleted manually. If the cleanup
+// interval is less than one, expired items are not deleted from the cache
+// before calling DeleteExpired.
 func New(defaultExpiration, cleanInterval time.Duration) *Cache {
 	c := &Cache{
 		items:             map[string]*Item{},
@@ -42,6 +54,8 @@ func New(defaultExpiration, cleanInterval time.Duration) *Cache {
 	return c
 }
 
+// Get return an item or nil, and a bool indicating whether
+// the key was found.
 func (c *Cache) Get(key string) (interface{}, bool) {
 	c.RLock()
 	item, ok := c.items[key]
@@ -53,6 +67,8 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 	return item.Object, true
 }
 
+// Set add a new key or replace an exist key. If the dur is 0, we will
+// use the defaultExpiration.
 func (c *Cache) Set(key string, val interface{}, dur time.Duration) {
 	var t *time.Time
 	c.Lock()
@@ -70,18 +86,21 @@ func (c *Cache) Set(key string, val interface{}, dur time.Duration) {
 	c.Unlock()
 }
 
+// Delete a key-value pair if the key is existed.
 func (c *Cache) Delete(key string) {
 	c.Lock()
 	delete(c.items, key)
 	c.Unlock()
 }
 
+// Delete all cache.
 func (c *Cache) Flush() {
 	c.Lock()
 	c.items = map[string]*Item{}
 	c.Unlock()
 }
 
+// Add a number to a key-value pair.
 func (c *Cache) Increment(key string, x int64) error {
 	c.Lock()
 	val, ok := c.items[key]
@@ -120,6 +139,7 @@ func (c *Cache) Increment(key string, x int64) error {
 	return nil
 }
 
+// Sub a number to a key-value pair.
 func (c *Cache) Decrement(key string, x int64) error {
 	c.Lock()
 	val, ok := c.items[key]
@@ -158,6 +178,7 @@ func (c *Cache) Decrement(key string, x int64) error {
 	return nil
 }
 
+// Return the number of item in cache.
 func (c *Cache) ItemCount() int {
 	c.RLock()
 	counts := len(c.items)
@@ -165,6 +186,7 @@ func (c *Cache) ItemCount() int {
 	return counts
 }
 
+// Delete all expired items.
 func (c *Cache) DeleteExpired() {
 	c.Lock()
 	for k, v := range c.items {
@@ -175,6 +197,7 @@ func (c *Cache) DeleteExpired() {
 	c.Unlock()
 }
 
+// The LRUCache is a goroutine-safe cache.
 type LRUCache struct {
 	sync.RWMutex
 	maxEntries int
@@ -187,6 +210,7 @@ type entry struct {
 	value interface{}
 }
 
+// NewLRU create a LRUCache with max size. The size is 0 means no limit.
 func NewLRU(size int) (*LRUCache, error) {
 	if size < 0 {
 		return nil, errors.New("The size of LRU Cache must no less than 0")
@@ -199,6 +223,7 @@ func NewLRU(size int) (*LRUCache, error) {
 	return lru, nil
 }
 
+// Add a new key-value pair to the LRUCache.
 func (c *LRUCache) Add(key string, value interface{}) {
 	c.Lock()
 	defer c.Unlock()
@@ -219,6 +244,8 @@ func (c *LRUCache) Add(key string, value interface{}) {
 	}
 }
 
+// Get a value from the LRUCache. And a bool indicating
+// whether found or not.
 func (c *LRUCache) Get(key string) (interface{}, bool) {
 	c.RLock()
 	defer c.RUnlock()
@@ -230,6 +257,8 @@ func (c *LRUCache) Get(key string) (interface{}, bool) {
 	return nil, false
 }
 
+// Remove a key-value pair in LRUCache. If the key is not existed,
+// nothing will happen.
 func (c *LRUCache) Remove(key string) {
 	c.Lock()
 	defer c.Unlock()
@@ -239,6 +268,7 @@ func (c *LRUCache) Remove(key string) {
 	}
 }
 
+// Return the number of key-value pair in LRUCache.
 func (c *LRUCache) Len() int {
 	c.RLock()
 	length := c.cacheList.Len()
@@ -246,6 +276,7 @@ func (c *LRUCache) Len() int {
 	return length
 }
 
+// Delete all entry in the LRUCache. But the max size will hold.
 func (c *LRUCache) Clear() {
 	c.Lock()
 	c.cacheList = list.New()
@@ -253,6 +284,7 @@ func (c *LRUCache) Clear() {
 	c.Unlock()
 }
 
+// Resize the max limit.
 func (c *LRUCache) SetMaxEntries(max int) error {
 	if max < 0 {
 		return errors.New("The max limit of entryies must no less than 0")
