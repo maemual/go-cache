@@ -251,3 +251,10 @@ func (c *LRUCache) removeOldestElement() {
 		c.removeElement(ent)
 	}
 }
+
+func (c *LRUCache) Len() int {
+	c.RLock()
+	length := c.cacheList.Len()
+	c.RUnlock()
+	return length
+}
