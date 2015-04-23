@@ -1,5 +1,6 @@
 go-cache
 ========
+[![GoDoc](https://godoc.org/github.com/maemual/go-cache?status.svg)](https://godoc.org/github.com/maemual/go-cache)
 
 An in-memory K/V cache and LRU cache library. Just for fun!
 
