@@ -66,7 +66,16 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 	c.RUnlock()
 	return item.Object, true
 }
-
+// Get all cache keys
+func (c *Cache) Keys() []string {
+	c.RLock()
+	defer c.RUnlock()
+	keys := make([]string, len(c.items))
+	for k := range c.items {
+		keys = append(keys, k)
+	}
+	return keys
+}
 // Set add a new key or replace an exist key. If the dur is 0, we will
 // use the defaultExpiration.
 func (c *Cache) Set(key string, val interface{}, dur time.Duration) {
