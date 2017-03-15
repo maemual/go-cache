@@ -8,7 +8,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	c := New(2*time.Second, 1*time.Second)
+	c := New(2 * time.Second, 1 * time.Second)
 	_, found := c.Get("xx")
 	if found {
 		t.Error("You should not get")
@@ -42,7 +42,7 @@ func TestCache(t *testing.T) {
 		t.Error("The number of cache must be 0")
 	}
 
-	c.Set("key", "val", 2*time.Second)
+	c.Set("key", "val", 2 * time.Second)
 	_, found = c.Get("key")
 	if !found {
 		t.Error("must have this")
@@ -56,10 +56,15 @@ func TestCache(t *testing.T) {
 	if found {
 		t.Error("The key is time out, you should not get")
 	}
+	for _, k := range c.Keys() {
+		if k != "key" {
+			t.Error("wrong keys")
+		}
+	}
 }
 
 func TestIncDec(t *testing.T) {
-	c := New(1*time.Second, -1)
+	c := New(1 * time.Second, -1)
 	c.Set("key", 100, -1)
 	c.Increment("key", 1)
 	val, _ := c.Get("key")
